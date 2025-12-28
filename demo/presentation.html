@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CogniLearn - Présentation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f1f5f9;
+            --accent-color: #38bdf8;
+            --secondary-color: #818cf8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(129, 140, 248, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(129, 140, 248, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Slide Container */
+        .deck {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 80%;
+            /* Aspect ratio 16:9ish */
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            padding: 3rem 4rem;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .slide.prev {
+            transform: translateX(-100%) scale(0.8) rotateY(10deg);
+            opacity: 0;
+        }
+
+        .slide.next {
+            transform: translateX(100%) scale(0.8) rotateY(-10deg);
+            opacity: 0;
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3 {
+            color: var(--accent-color);
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+            padding-bottom: 1rem;
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        p,
+        li {
+            font-size: 1.2rem;
+            line-height: 1.7;
+            color: #cbd5e1;
+        }
+
+        strong {
+            color: var(--accent-color);
+        }
+
+        /* Layout Utilities */
+        .center {
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            height: 100%;
+            align-items: center;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        /* Components */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .icon-box {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+        }
+
+        .feature-list li {
+            margin-bottom: 1rem;
+            list-style: none;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: '\f00c';
+            /* FontAwesome check */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: #d4d4d4;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+            overflow-x: auto;
+        }
+
+        .keyword {
+            color: #569cd6;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .comment {
+            color: #6a9955;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.8rem 1.2rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn:hover {
+            background: var(--accent-color);
+            color: #0f172a;
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: monospace;
+            opacity: 0.5;
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.6s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="deck" id="deck">
+
+        <!-- SLIDE 1: Title -->
+        <div class="slide active center">
+            <div class="fade-in-up">
+                <i class="fas fa-brain" style="font-size: 5rem; color: var(--accent-color); margin-bottom: 2rem;"></i>
+                <h1>CogniLearn</h1>
+                <p style="font-size: 1.5rem; color: var(--secondary-color); margin-top: 1rem;">Plateforme Éducative
+                    Intelligente</p>
+                <p style="margin-top: 3rem; opacity: 0.7;">Propulsée par l'IA Générative</p>
+                <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.5;">Décembre 2025 | Hssaine Mohammed Amine & Akebli Fatima-Ezzahrae
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Problem -->
+        <div class="slide">
+            <h2>Le Défi Éducatif</h2>
+            <div class="grid-2">
+                <div class="card fade-in-up delay-1">
+                    <div class="icon-box"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Problématiques Actuelles</h3>
+                    <ul class="feature-list" style="margin-top: 1.5rem;">
+                        <li style="--secondary-color: #ef4444;">Apprentissage uniforme pour tous</li>
+                        <li style="--secondary-color: #ef4444;">Quiz statiques et répétitifs</li>
+                        <li style="--secondary-color: #ef4444;">Feedback générique</li>
+                        <li style="--secondary-color: #ef4444;">Manque d'interactivité</li>
+                    </ul>
+                </div>
+                <div class="card fade-in-up delay-2" style="border-color: var(--secondary-color);">
+                    <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                    <h3>Notre Vision</h3>
+                    <p>Transformer l'éducation grâce à une IA qui comprend, adapte et guide chaque étudiant
+                        individuellement.</p>
+                    <div style="margin-top: 2rem; font-weight: bold; color: var(--accent-color);">
+                        Adaptatif • Interactif • Intelligent
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Solution -->
+        <div class="slide center">
+            <h2>La Solution CogniLearn</h2>
+            <div class="grid-3" style="width: 100%;">
+                <div class="card fade-in-up delay-1">
+                    <div class="icon-box"><i class="fas fa-robot"></i></div>
+                    <h3>LLM Powered</h3>
+                    <p>Génération de questions intelligentes et contextuelles via Gemini 2.0.</p>
+                </div>
+                <div class="card fade-in-up delay-2">
+                    <div class="icon-box"><i class="fas fa-database"></i></div>
+                    <h3>RAG Engine</h3>
+                    <p>Récupération précise du contenu de cours pour des réponses factuelles.</p>
+                </div>
+                <div class="card fade-in-up delay-3">
+                    <div class="icon-box"><i class="fas fa-cogs"></i></div>
+                    <h3>Smart Agent</h3>
+                    <p>Orchestration dynamique et adaptation du niveau de difficulté.</p>
+                </div>
+            </div>
+            <p class="fade-in-up delay-3" style="margin-top: 3rem; font-size: 1.4rem;">
+                "Nous ne générons pas juste des quiz, nous créons des <strong
+                    style="color: var(--secondary-color);">parcours d'apprentissage</strong>."
+            </p>
+        </div>
+
+        <!-- SLIDE 4: Architecture -->
+        <div class="slide">
+            <h2>Architecture Technique</h2>
+            <div class="grid-2">
+                <div class="fade-in-up delay-1">
+                    <ul class="feature-list">
+                        <li><strong>Frontend:</strong> Thymeleaf + Bootstrap 5 (Glassmorphism)</li>
+                        <li><strong>Backend:</strong> Spring Boot 3.2 (Java 21)</li>
+                        <li><strong>Security:</strong> Spring Security 6 (RBAC, BCrypt)</li>
+                        <li><strong>Data:</strong> PostgreSQL + JPA (Hibernate)</li>
+                        <li><strong>AI:</strong> Spring AI + Google Gemini API</li>
+                    </ul>
+                </div>
+                <div class="code-block fade-in-up delay-2">
+                    <div style="margin-bottom: 0.5rem; opacity: 0.5;">// Architecture Layering</div>
+                    <div>
+                        <span class="keyword">public class</span> <span class="function">LLMService</span> {<br>
+                        &nbsp;&nbsp;<span class="keyword">private final</span> ChatClient chatClient;<br>
+                        &nbsp;&nbsp;<span class="keyword">private final</span> VectorStore vectorStore;<br>
+                        <br>
+                        &nbsp;&nbsp;<span class="comment">// Circuit Breaker Pattern</span><br>
+                        &nbsp;&nbsp;<span class="keyword">public</span> Response <span
+                            class="function">generate</span>(Prompt p) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">try</span> {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> chatClient.call(p);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;} <span class="keyword">catch</span> (TimeoutException e) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span>
+                        smartMock.fallback(p);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;}<br>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: AI Pipeline -->
+        <div class="slide center">
+            <h2>Pipeline IA & Prompt Engineering</h2>
+            <div style="display: flex; gap: 1rem; align-items: center; margin: 3rem 0;" class="fade-in-up delay-1">
+                <div class="card">Extraction</div>
+                <i class="fas fa-arrow-right" style="color: var(--accent-color);"></i>
+                <div class="card">RAG Context</div>
+                <i class="fas fa-arrow-right" style="color: var(--accent-color);"></i>
+                <div class="card" style="border-color: var(--secondary-color);">Prompt Chain</div>
+                <i class="fas fa-arrow-right" style="color: var(--accent-color);"></i>
+                <div class="card">JSON Output</div>
+            </div>
+
+            <div class="code-block fade-in-up delay-2" style="width: 80%;">
+                <span class="string">"""<br>
+                    ROLE: Expert Pedagogical Assistant<br>
+                    TASK: Generate 5 MCQs based on CONTEXT<br>
+                    CONTEXT: {rag_content}<br>
+                    FORMAT: Strict JSON<br>
+                    CONSTRAINT: Progressive difficulty (Easy -> Hard)<br>
+                    """</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Complex Content -->
+        <div class="slide">
+            <h2>Support Contenu Complexe</h2>
+            <p>La plateforme gère nativement les notations scientifiques et mathématiques.</p>
+            <div class="grid-2" style="margin-top: 2rem;">
+                <div class="card fade-in-up delay-1">
+                    <div class="icon-box"><i class="fas fa-flask"></i></div>
+                    <h3>Chimie</h3>
+                    <div style="font-size: 1.5rem; font-family: serif; margin-top: 1rem;">
+                        2H₂ + O₂ → 2H₂O
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.7;">Réactions et stœchiométrie</p>
+                </div>
+                <div class="card fade-in-up delay-2">
+                    <div class="icon-box"><i class="fas fa-square-root-alt"></i></div>
+                    <h3>Mathématiques</h3>
+                    <div style="font-size: 1.5rem; font-family: serif; margin-top: 1rem;">
+                        ∫(x²)dx = x³/3 + C
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.7;">Calcul intégral et équations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Demo -->
+        <div class="slide center">
+            <h2>Démonstration Live</h2>
+            <div class="grid-3" style="width: 100%;">
+                <div class="card fade-in-up delay-1">
+                    <h3>1. Admin</h3>
+                    <p>Création de cours et ingestion de contenu.</p>
+                </div>
+                <div class="card fade-in-up delay-2" style="background: rgba(56, 189, 248, 0.1);">
+                    <h3>2. Étudiant</h3>
+                    <p>Quiz adaptatif et feedback IA en temps réel.</p>
+                </div>
+                <div class="card fade-in-up delay-3">
+                    <h3>3. Analytics</h3>
+                    <p>Suivi de progression et tableaux de bord.</p>
+                </div>
+            </div>
+            <div style="margin-top: 3rem;" class="fade-in-up delay-3">
+                <i class="fas fa-laptop-code" style="font-size: 3rem; color: var(--text-color);"></i>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Conclusion -->
+        <div class="slide center">
+            <h1>Merci !</h1>
+            <p style="font-size: 1.5rem; margin-top: 2rem;">Des questions ?</p>
+
+            <div style="margin-top: 4rem; display: flex; gap: 2rem;">
+                <div class="card">
+                    <i class="fab fa-github"></i> github.com/medaminehssaine/CogniLearn
+                </div>
+                
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn" onclick="nextSlide()"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="slide-number" id="slideNumber">1 / 8</div>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideNumber = document.getElementById('slideNumber');
+        const totalSlides = slides.length;
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev', 'next');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                } else {
+                    slide.classList.add('next');
+                }
+            });
+
+            // Update Progress
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+            slideNumber.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Initialize
+        updateSlides();
+    </script>
+</body>
+
+</html>
