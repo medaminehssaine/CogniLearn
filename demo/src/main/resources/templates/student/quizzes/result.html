@@ -1,172 +1,378 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: html(pageTitle='Quiz Result', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=null)}">
+    th:replace="~{layout :: html(pageTitle='Quiz Result', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=~{::extraScripts})}">
+
 <head>
     <th:block th:fragment="extraStyles">
         <style>
-            .result-header {
-                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-                color: white;
-                border-radius: 0.75rem;
-            }
-            .score-circle {
-                width: 150px;
-                height: 150px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+            .result-container {
+                max-width: 1000px;
                 margin: 0 auto;
             }
-            .score-passed {
-                background: linear-gradient(135deg, #22c55e, #16a34a);
+
+            .result-header-card {
+                background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 24px;
+                padding: 3rem 2rem;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
             }
-            .score-failed {
-                background: linear-gradient(135deg, #ef4444, #dc2626);
+
+            .result-header-card::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -10%;
+                width: 400px;
+                height: 400px;
+                background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
+                border-radius: 50%;
+                z-index: 0;
             }
-            .question-result {
-                border-left: 4px solid;
+
+            .score-circle-wrapper {
+                position: relative;
+                width: 200px;
+                height: 200px;
+                margin: 0 auto;
             }
-            .question-correct {
-                border-left-color: #22c55e;
+
+            .score-circle {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                z-index: 2;
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             }
-            .question-incorrect {
-                border-left-color: #ef4444;
+
+            .score-circle::before {
+                content: '';
+                position: absolute;
+                inset: -5px;
+                border-radius: 50%;
+                padding: 5px;
+                background: conic-gradient(from 0deg, var(--score-color), transparent 80%);
+                -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                -webkit-mask-composite: xor;
+                mask-composite: exclude;
+                animation: spin 4s linear infinite;
+            }
+
+            @keyframes spin {
+                from {
+                    --angle: 0deg;
+                }
+
+                to {
+                    --angle: 360deg;
+                }
+            }
+
+            .score-value {
+                font-size: 3.5rem;
+                font-weight: 800;
+                line-height: 1;
+                background: linear-gradient(135deg, #fff, #cbd5e1);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .score-label {
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                font-size: 0.8rem;
+                color: #94a3b8;
+                margin-top: 0.5rem;
+            }
+
+            .stat-box {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                padding: 1.5rem;
+                text-align: center;
+                transition: transform 0.3s;
+            }
+
+            .stat-box:hover {
+                transform: translateY(-5px);
+                background: rgba(255, 255, 255, 0.08);
+            }
+
+            .question-result-card {
+                background: rgba(30, 41, 59, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 16px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                transition: all 0.3s;
+            }
+
+            .question-result-card:hover {
+                background: rgba(30, 41, 59, 0.8);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .question-result-card.correct {
+                border-left: 4px solid #10b981;
+            }
+
+            .question-result-card.incorrect {
+                border-left: 4px solid #ef4444;
+            }
+
+            .option-result {
+                padding: 1rem;
+                border-radius: 12px;
+                margin-bottom: 0.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px solid transparent;
+            }
+
+            .option-result.correct-answer {
+                background: rgba(16, 185, 129, 0.1);
+                border-color: rgba(16, 185, 129, 0.3);
+            }
+
+            .option-result.wrong-selection {
+                background: rgba(239, 68, 68, 0.1);
+                border-color: rgba(239, 68, 68, 0.3);
+            }
+
+            .ai-feedback-box {
+                background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+                border: 1px solid rgba(99, 102, 241, 0.2);
+                border-radius: 16px;
+                padding: 1.5rem;
+                margin-top: 2rem;
+            }
+
+            .explain-btn {
+                background: rgba(99, 102, 241, 0.1);
+                color: #818cf8;
+                border: 1px solid rgba(99, 102, 241, 0.2);
+                border-radius: 8px;
+                padding: 0.4rem 1rem;
+                font-size: 0.85rem;
+                transition: all 0.2s;
+            }
+
+            .explain-btn:hover {
+                background: rgba(99, 102, 241, 0.2);
+                color: #fff;
+                transform: translateY(-2px);
             }
         </style>
     </th:block>
 </head>
+
 <body>
-<div th:fragment="content">
-    <div class="mb-4">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" th:text="${quiz.course.title}">Course</a></li>
-                <li class="breadcrumb-item active">Quiz Result</li>
-            </ol>
-        </nav>
-    </div>
-
-    <!-- Result Header -->
-    <div class="result-header p-4 mb-4">
-        <div class="row align-items-center">
-            <div class="col-md-4 text-center">
-                <div class="score-circle" th:classappend="${result.passed ? 'score-passed' : 'score-failed'}">
-                    <div>
-                        <div class="display-4 fw-bold" th:text="${#numbers.formatDecimal(result.scorePercentage, 1, 0)} + '%'">85%</div>
-                        <small>Score</small>
-                    </div>
-                </div>
+    <div th:fragment="content">
+        <div class="result-container">
+            <!-- Breadcrumb -->
+            <div class="mb-4 fade-in">
+                <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}"
+                    class="text-decoration-none text-muted hover-arrow">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Course
+                </a>
             </div>
-            <div class="col-md-8">
-                <h2 th:if="${result.passed}"><i class="bi bi-trophy me-2"></i>Congratulations!</h2>
-                <h2 th:unless="${result.passed}"><i class="bi bi-emoji-frown me-2"></i>Keep Learning!</h2>
-                <p class="lead mb-3" th:text="${result.agentFeedback}">AI Feedback here...</p>
-                <div class="row">
-                    <div class="col-4">
-                        <div class="bg-white bg-opacity-10 rounded p-2 text-center">
-                            <div class="h4 mb-0" th:text="${result.correctAnswers} + '/' + ${result.totalQuestions}">4/5</div>
-                            <small>Correct Answers</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="bg-white bg-opacity-10 rounded p-2 text-center">
-                            <div class="h4 mb-0" th:text="${(result.timeTakenSeconds / 60)} + 'm ' + ${(result.timeTakenSeconds % 60)} + 's'">2m 30s</div>
-                            <small>Time Taken</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="bg-white bg-opacity-10 rounded p-2 text-center">
-                            <div class="h4 mb-0" th:text="${result.recommendedNextDifficulty}">MEDIUM</div>
-                            <small>Next Difficulty</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <!-- Question Review -->
-            <h5 class="mb-3"><i class="bi bi-journal-check me-2"></i>Question Review</h5>
-            
-            <div th:each="question, iterStat : ${questions}" class="card question-result mb-3"
-                 th:classappend="${#lists.contains(result.studentAnswers.![questionId], question.id) ? 
-                     (#lists.contains(result.studentAnswers.?[questionId == #root.question.id and correct == true].![questionId], question.id) ? 'question-correct' : 'question-incorrect') : 
-                     'question-incorrect'}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-secondary">Question [[${iterStat.count}]]</span>
-                        <th:block th:with="studentAnswer=${result.studentAnswers.?[questionId == #root.question.id]}">
-                            <span th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].correct}" class="badge bg-success">
-                                <i class="bi bi-check-circle me-1"></i>Correct
-                            </span>
-                            <span th:unless="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].correct}" class="badge bg-danger">
-                                <i class="bi bi-x-circle me-1"></i>Incorrect
-                            </span>
-                        </th:block>
+            <!-- Result Header -->
+            <div class="result-header-card mb-5 fade-in">
+                <div class="row align-items-center">
+                    <div class="col-lg-4 text-center mb-4 mb-lg-0">
+                        <div class="score-circle-wrapper"
+                            th:style="'--score-color: ' + (${result.passed} ? '#10b981' : '#ef4444')">
+                            <div class="score-circle">
+                                <div class="score-value"
+                                    th:text="${#numbers.formatDecimal(result.scorePercentage, 1, 0)} + '%'">85%</div>
+                                <div class="score-label">Final Score</div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <h6 class="math-content" th:text="${question.questionText}">Question?</h6>
-                    
-                    <div class="mt-3">
-                        <div th:each="option, optStat : ${question.options}" class="mb-2">
-                            <th:block th:with="studentAnswer=${result.studentAnswers.?[questionId == #root.question.id]}">
-                                <div th:class="${optStat.index == question.correctOptionIndex ? 'p-2 bg-success bg-opacity-10 rounded border border-success' : 
-                                               (!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex ? 'p-2 bg-danger bg-opacity-10 rounded border border-danger' : 'p-2')}">
-                                    <span class="fw-bold me-2" th:text="${#strings.concat('ABCD'.charAt(optStat.index), '.')}">A.</span>
-                                    <span class="math-content" th:text="${option.optionText}">Option</span>
-                                    <span th:if="${optStat.index == question.correctOptionIndex}" class="badge bg-success ms-2">Correct Answer</span>
-                                    <span th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex}" 
-                                          class="badge bg-danger ms-2">Your Answer</span>
+                    <div class="col-lg-8">
+                        <div class="ps-lg-4">
+                            <h2 class="display-6 fw-bold text-white mb-2" th:if="${result.passed}">
+                                <i class="bi bi-trophy-fill text-warning me-2"></i>Outstanding Job!
+                            </h2>
+                            <h2 class="display-6 fw-bold text-white mb-2" th:unless="${result.passed}">
+                                <i class="bi bi-graph-up-arrow text-info me-2"></i>Keep Practicing!
+                            </h2>
+
+                            <div class="ai-feedback-box mb-4">
+                                <div class="d-flex align-items-center gap-2 mb-2 text-primary">
+                                    <i class="bi bi-stars"></i>
+                                    <span class="fw-bold small text-uppercase">AI Analysis</span>
                                 </div>
-                            </th:block>
+                                <p class="mb-0 text-light" style="line-height: 1.6;" th:text="${result.agentFeedback}">
+                                    AI Feedback here...</p>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="h3 mb-0 text-white"
+                                            th:text="${result.correctAnswers} + '/' + ${result.totalQuestions}">4/5
+                                        </div>
+                                        <small class="text-muted text-uppercase"
+                                            style="font-size: 0.7rem;">Correct</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="h3 mb-0 text-white"
+                                            th:text="${(result.timeTakenSeconds / 60)} + 'm ' + ${(result.timeTakenSeconds % 60)} + 's'">
+                                            2m 30s</div>
+                                        <small class="text-muted text-uppercase" style="font-size: 0.7rem;">Time</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-box">
+                                        <div class="h3 mb-0 text-white" th:text="${result.recommendedNextDifficulty}">
+                                            MEDIUM</div>
+                                        <small class="text-muted text-uppercase" style="font-size: 0.7rem;">Next
+                                            Level</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="alert alert-info mt-3 mb-0" th:if="${question.explanation}">
-                        <strong><i class="bi bi-lightbulb me-2"></i>Explanation:</strong>
-                        <span class="math-content" th:text="${question.explanation}">Explanation text...</span>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="d-flex justify-content-between align-items-center mb-4 fade-in fade-in-delay-1">
+                        <h4 class="text-white mb-0"><i class="bi bi-journal-check me-2 text-primary"></i>Review Answers
+                        </h4>
+                        <button class="btn btn-outline-light btn-sm" onclick="expandAll()">
+                            <i class="bi bi-arrows-expand me-1"></i> Expand All
+                        </button>
+                    </div>
+
+                    <div th:each="question, iterStat : ${questions}"
+                        class="question-result-card fade-in fade-in-delay-2" th:classappend="${#lists.contains(result.studentAnswers.![questionId], question.id) ? 
+                         (#lists.contains(result.studentAnswers.?[questionId == #root.question.id and correct == true].![questionId], question.id) ? 'correct' : 'incorrect') : 
+                         'incorrect'}">
+
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <span
+                                    class="badge bg-dark border border-secondary text-muted">Q[[${iterStat.count}]]</span>
+                                <th:block
+                                    th:with="studentAnswer=${result.studentAnswers.?[questionId == #root.question.id]}">
+                                    <span th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].correct}"
+                                        class="text-success fw-bold small">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Correct
+                                    </span>
+                                    <span th:unless="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].correct}"
+                                        class="text-danger fw-bold small">
+                                        <i class="bi bi-x-circle-fill me-1"></i> Incorrect
+                                    </span>
+                                </th:block>
+                            </div>
+                            <button class="explain-btn" th:onclick="'explainQuestion(' + ${iterStat.count} + ')'">
+                                <i class="bi bi-stars me-1"></i> Explain with AI
+                            </button>
+                        </div>
+
+                        <h5 class="text-white mb-3 math-content" th:text="${question.questionText}"
+                            th:id="'q-text-' + ${iterStat.count}">Question?</h5>
+
+                        <div class="options-list">
+                            <div th:each="option, optStat : ${question.options}" class="option-result"
+                                th:with="studentAnswer=${result.studentAnswers.?[questionId == #root.question.id]}"
+                                th:classappend="${optStat.index == question.correctOptionIndex ? 'correct-answer' : 
+                                           (!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex ? 'wrong-selection' : '')}">
+
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="fw-bold text-muted"
+                                        th:text="${#strings.concat('ABCD'.charAt(optStat.index))}">A</span>
+                                    <span class="text-light math-content" th:text="${option.optionText}">Option</span>
+                                </div>
+
+                                <div th:if="${optStat.index == question.correctOptionIndex}">
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                </div>
+                                <div
+                                    th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex}">
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-top border-secondary border-opacity-25"
+                            th:if="${question.explanation}">
+                            <p class="small text-muted mb-1 text-uppercase fw-bold">Explanation</p>
+                            <p class="text-light small mb-0 math-content" th:text="${question.explanation}">Explanation
+                                text...</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="col-lg-4">
-            <!-- Actions -->
-            <div class="card mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-arrow-right-circle me-2"></i>Next Steps</h5>
-                </div>
-                <div class="card-body d-grid gap-2">
-                    <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" class="btn btn-primary">
-                        <i class="bi bi-arrow-repeat me-2"></i>Take Another Quiz
-                    </a>
-                    <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" class="btn btn-outline-primary">
-                        <i class="bi bi-book me-2"></i>Review Course Material
-                    </a>
-                    <a th:href="@{/student/history}" class="btn btn-outline-secondary">
-                        <i class="bi bi-clock-history me-2"></i>View All Results
-                    </a>
-                </div>
-            </div>
-
-            <!-- Status -->
-            <div class="card" th:classappend="${result.passed ? 'bg-success bg-opacity-10' : 'bg-warning bg-opacity-10'}">
-                <div class="card-body text-center">
-                    <i th:if="${result.passed}" class="bi bi-patch-check-fill text-success fs-1"></i>
-                    <i th:unless="${result.passed}" class="bi bi-hourglass-split text-warning fs-1"></i>
-                    <h5 class="mt-2" th:if="${result.passed}">Course Progress Updated!</h5>
-                    <h5 class="mt-2" th:unless="${result.passed}">Keep Practicing!</h5>
-                    <p class="small mb-0 text-muted">
-                        <span th:if="${result.passed}">Great job! Your progress has been recorded.</span>
-                        <span th:unless="${result.passed}">You need 70% to pass. Review the material and try again!</span>
-                    </p>
+                <div class="col-lg-4">
+                    <div class="card glass-panel border-0 mb-4 sticky-top fade-in fade-in-delay-1"
+                        style="top: 90px; z-index: 90;">
+                        <div class="card-body">
+                            <h5 class="text-white mb-4">What's Next?</h5>
+                            <div class="d-grid gap-3">
+                                <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}"
+                                    class="btn btn-primary py-3">
+                                    <i class="bi bi-arrow-repeat me-2"></i>Take Another Quiz
+                                </a>
+                                <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}"
+                                    class="btn btn-outline-light py-3">
+                                    <i class="bi bi-book me-2"></i>Review Course Material
+                                </a>
+                                <a th:href="@{/student/history}" class="btn btn-outline-secondary py-3">
+                                    <i class="bi bi-clock-history me-2"></i>View History
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <th:block th:fragment="extraScripts">
+        <script>
+            function explainQuestion(questionIndex) {
+                const questionText = document.getElementById('q-text-' + questionIndex).innerText;
+                const message = "Can you explain this question: \"" + questionText + "\"? I'd like to understand the correct answer better.";
+
+                // Open chat panel
+                const chatPanel = document.getElementById('chatPanel');
+                if (!chatPanel.classList.contains('active')) {
+                    toggleChat();
+                }
+
+                // Populate input and send
+                const input = document.getElementById('chatInput');
+                input.value = message;
+                sendMessage();
+            }
+
+            function expandAll() {
+                // Logic to expand all explanations if they were collapsible (currently they are always visible)
+                // Could scroll to first question
+                document.querySelector('.question-result-card').scrollIntoView({ behavior: 'smooth' });
+            }
+        </script>
+    </th:block>
 </body>
+
 </html>

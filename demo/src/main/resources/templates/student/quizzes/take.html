@@ -1,180 +1,291 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: html(pageTitle='Take Quiz', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=~{::extraScripts})}">
+    th:replace="~{layout :: html(pageTitle='Take Quiz', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=~{::extraScripts})}">
+
 <head>
     <th:block th:fragment="extraStyles">
         <style>
-            .question-card {
-                border-left: 4px solid var(--primary-color);
+            .quiz-container {
+                max-width: 1000px;
+                margin: 0 auto;
             }
+
+            .question-card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                padding: 2rem;
+                margin-bottom: 2rem;
+                position: relative;
+                overflow: hidden;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .question-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+                border-color: rgba(99, 102, 241, 0.3);
+            }
+
+            .question-number {
+                position: absolute;
+                top: 0;
+                left: 0;
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                color: white;
+                padding: 0.5rem 1.5rem;
+                border-bottom-right-radius: 20px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                box-shadow: 5px 5px 15px rgba(99, 102, 241, 0.3);
+            }
+
+            .question-text {
+                font-size: 1.25rem;
+                font-weight: 500;
+                color: #f8fafc;
+                margin-top: 1.5rem;
+                margin-bottom: 2rem;
+                line-height: 1.6;
+            }
+
             .option-label {
-                display: block;
-                padding: 1rem;
-                margin-bottom: 0.5rem;
-                border: 2px solid #e2e8f0;
-                border-radius: 0.5rem;
+                display: flex;
+                align-items: center;
+                padding: 1.2rem;
+                margin-bottom: 1rem;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
                 cursor: pointer;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+            }
+
+            .option-label:hover {
+                background: rgba(99, 102, 241, 0.1);
+                border-color: rgba(99, 102, 241, 0.4);
+                transform: translateX(5px);
+            }
+
+            .form-check-input:checked+.option-label {
+                background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+                border-color: #6366f1;
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+            }
+
+            .option-marker {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 1rem;
+                font-weight: 600;
+                color: #94a3b8;
                 transition: all 0.2s;
             }
-            .option-label:hover {
-                border-color: var(--primary-color);
-                background-color: #f8fafc;
+
+            .form-check-input:checked+.option-label .option-marker {
+                background: #6366f1;
+                color: white;
+                transform: scale(1.1);
             }
-            .form-check-input:checked + .option-label {
-                border-color: var(--primary-color);
-                background-color: rgba(79, 70, 229, 0.1);
+
+            .timer-card {
+                background: linear-gradient(135deg, #1e293b, #0f172a);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                padding: 1.5rem;
+                text-align: center;
+                position: sticky;
+                top: 90px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                z-index: 100;
             }
-            .timer {
-                font-size: 1.5rem;
-                font-weight: bold;
+
+            .timer-display {
+                font-size: 2.5rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, #6366f1, #ec4899);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-family: 'Courier New', monospace;
+                margin: 0.5rem 0;
+            }
+
+            .quiz-info-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 16px;
+                padding: 1.5rem;
+                margin-top: 1.5rem;
+            }
+
+            .ai-badge {
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+                border: 1px solid rgba(16, 185, 129, 0.3);
+                color: #34d399;
+                padding: 0.5rem 1rem;
+                border-radius: 50px;
+                font-size: 0.85rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .submit-btn {
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                border: none;
+                padding: 1rem 2rem;
+                border-radius: 12px;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                transition: all 0.3s;
+                box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+            }
+
+            .submit-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
             }
         </style>
     </th:block>
 </head>
+
 <body>
-<div th:fragment="content">
-    <div class="mb-4">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" th:text="${quiz.course.title}">Course</a></li>
-                <li class="breadcrumb-item active">Quiz</li>
-            </ol>
-        </nav>
-    </div>
+    <div th:fragment="content">
+        <div class="quiz-container">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-5 fade-in">
+                <div>
+                    <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}"
+                        class="text-decoration-none text-muted mb-2 d-inline-block hover-arrow">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Course
+                    </a>
+                    <h2 class="mb-1 text-white">
+                        <span class="text-gradient">Quiz:</span> <span th:text="${quiz.course.title}">Course
+                            Title</span>
+                    </h2>
+                    <div class="d-flex gap-3 align-items-center mt-2">
+                        <span class="badge bg-dark border border-secondary text-light">
+                            <i class="bi bi-bar-chart me-1"></i>
+                            <span th:text="${quiz.difficulty}">MEDIUM</span>
+                        </span>
+                        <span th:if="${quiz.generatedByGemini}" class="ai-badge">
+                            <i class="bi bi-stars"></i> AI Generated
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <form th:action="@{/student/quizzes/{id}/submit(id=${quiz.id})}" method="post" id="quizForm">
-                <input type="hidden" name="timeTaken" id="timeTaken" value="0">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <form th:action="@{/student/quizzes/{id}/submit(id=${quiz.id})}" method="post" id="quizForm">
+                        <input type="hidden" name="timeTaken" id="timeTaken" value="0">
 
-                <div th:each="question, iterStat : ${questions}" class="card question-card mb-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-primary">Question [[${iterStat.count}]] of [[${questions.size()}]]</span>
-                        </div>
-                        <h5 class="mb-4 math-content" th:text="${question.questionText}">Question text?</h5>
-                        
-                        <div class="options">
-                            <div th:each="option, optStat : ${question.options}" class="form-check p-0">
-                                <input type="radio" 
-                                       th:name="'answer_' + ${question.id}" 
-                                       th:id="'q' + ${question.id} + '_opt' + ${optStat.index}"
-                                       th:value="${optStat.index}"
-                                       class="form-check-input visually-hidden" 
-                                       required>
-                                <label class="option-label math-content" 
-                                       th:for="'q' + ${question.id} + '_opt' + ${optStat.index}">
-                                    <span class="fw-bold me-2" th:text="${#strings.concat('ABCD'.charAt(optStat.index), '.')}">A.</span>
-                                    <span th:text="${option.optionText}">Option text</span>
-                                </label>
+                        <div th:each="question, iterStat : ${questions}" class="question-card fade-in"
+                            th:style="'animation-delay: ' + ${iterStat.index * 0.1} + 's'">
+                            <div class="question-number">
+                                Question <span th:text="${iterStat.count}">1</span> / <span
+                                    th:text="${questions.size()}">10</span>
+                            </div>
+
+                            <div class="question-text math-content" th:text="${question.questionText}">
+                                What is the primary function of a neural network?
+                            </div>
+
+                            <div class="options">
+                                <div th:each="option, optStat : ${question.options}" class="form-check p-0">
+                                    <input type="radio" th:name="'answer_' + ${question.id}"
+                                        th:id="'q' + ${question.id} + '_opt' + ${optStat.index}"
+                                        th:value="${optStat.index}" class="form-check-input visually-hidden" required>
+                                    <label class="option-label math-content"
+                                        th:for="'q' + ${question.id} + '_opt' + ${optStat.index}">
+                                        <div class="option-marker"
+                                            th:text="${#strings.concat('ABCD'.charAt(optStat.index))}">A</div>
+                                        <span th:text="${option.optionText}">Option text</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                    </div>
+
+                        <div class="d-flex justify-content-end mt-4 mb-5 fade-in" style="animation-delay: 0.5s">
+                            <button type="submit" class="submit-btn text-white w-100 w-md-auto">
+                                <i class="bi bi-check-circle-fill me-2"></i>Submit Quiz
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="card">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>Back to Course
-                        </a>
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-check-circle me-2"></i>Submit Quiz
-                        </button>
+                <div class="col-lg-4">
+                    <!-- Timer -->
+                    <div class="timer-card fade-in fade-in-delay-1">
+                        <div class="text-muted small text-uppercase tracking-wider mb-1">Time Elapsed</div>
+                        <div class="timer-display" id="timer">00:00</div>
+                        <div class="progress mt-3" style="height: 4px; background: rgba(255,255,255,0.1);">
+                            <div class="progress-bar bg-gradient-primary" role="progressbar" style="width: 0%"
+                                id="timerProgress"></div>
+                        </div>
                     </div>
-                </div>
-            </form>
-        </div>
 
-        <div class="col-lg-4">
-            <!-- Timer -->
-            <div class="card mb-4 sticky-top" style="top: 1rem;">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-stopwatch me-2"></i>Quiz Timer</h5>
-                </div>
-                <div class="card-body text-center">
-                    <div class="timer text-primary" id="timer">00:00</div>
-                    <p class="text-muted small mb-0">Time elapsed</p>
-                </div>
-            </div>
-
-            <!-- Quiz Info -->
-            <div class="card mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quiz Info</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Course</span>
-                        <strong th:text="${quiz.course.title}">Course</strong>
+                    <!-- Tips -->
+                    <div class="quiz-info-card fade-in fade-in-delay-2">
+                        <h5 class="text-white mb-3"><i class="bi bi-lightbulb text-warning me-2"></i>Pro Tips</h5>
+                        <ul class="list-unstyled text-muted small mb-0 d-flex flex-column gap-2">
+                            <li class="d-flex gap-2">
+                                <i class="bi bi-check2 text-success"></i>
+                                <span>Read each question carefully before answering.</span>
+                            </li>
+                            <li class="d-flex gap-2">
+                                <i class="bi bi-check2 text-success"></i>
+                                <span>There is no time limit, but speed is tracked.</span>
+                            </li>
+                            <li class="d-flex gap-2">
+                                <i class="bi bi-check2 text-success"></i>
+                                <span>You need <strong>70%</strong> to pass this quiz.</span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Difficulty</span>
-                        <span th:text="${quiz.difficulty.name()}" 
-                              th:class="${quiz.difficulty.name() == 'EASY' ? 'badge bg-success' : 
-                                         (quiz.difficulty.name() == 'MEDIUM' ? 'badge bg-warning' : 
-                                         (quiz.difficulty.name() == 'HARD' ? 'badge bg-danger' : 'badge bg-dark'))}">
-                            Medium
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Questions</span>
-                        <strong th:text="${questions.size()}">5</strong>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Generated by</span>
-                        <span th:if="${quiz.generatedByGemini}" class="badge bg-info">
-                            <i class="bi bi-stars me-1"></i>
-                            <span th:text="${quiz.llmModelUsed != null ? 'Gemini ' + quiz.llmModelUsed : 'Google Gemini AI'}">Gemini AI</span>
-                        </span>
-                        <span th:unless="${quiz.generatedByGemini}" class="badge bg-secondary">
-                            <i class="bi bi-gear me-1"></i>Mock Mode
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tips -->
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6><i class="bi bi-lightbulb me-2"></i>Tips</h6>
-                    <ul class="small text-muted mb-0">
-                        <li>Read each question carefully</li>
-                        <li>All questions must be answered</li>
-                        <li>You cannot go back after submitting</li>
-                        <li>70% is required to pass</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<th:block th:fragment="extraScripts">
-    <script>
-        let seconds = 0;
-        const timerElement = document.getElementById('timer');
-        const timeTakenInput = document.getElementById('timeTaken');
+    <th:block th:fragment="extraScripts">
+        <script>
+            let seconds = 0;
+            const timerElement = document.getElementById('timer');
+            const timeTakenInput = document.getElementById('timeTaken');
+            const timerProgress = document.getElementById('timerProgress');
 
-        function updateTimer() {
-            seconds++;
-            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toString().padStart(2, '0');
-            timerElement.textContent = `${mins}:${secs}`;
-            timeTakenInput.value = seconds;
-        }
+            function updateTimer() {
+                seconds++;
+                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                timerElement.textContent = `${mins}:${secs}`;
+                timeTakenInput.value = seconds;
 
-        setInterval(updateTimer, 1000);
+                // Animate progress bar (just for visual effect, loops every minute)
+                const progress = (seconds % 60) / 60 * 100;
+                timerProgress.style.width = `${progress}%`;
+            }
 
-        // Confirm before leaving
-        window.onbeforeunload = function() {
-            return "Are you sure you want to leave? Your progress will be lost.";
-        };
+            setInterval(updateTimer, 1000);
 
-        document.getElementById('quizForm').addEventListener('submit', function() {
-            window.onbeforeunload = null;
-        });
-    </script>
-</th:block>
+            // Confirm before leaving
+            window.onbeforeunload = function () {
+                return "Are you sure you want to leave? Your progress will be lost.";
+            };
+
+            document.getElementById('quizForm').addEventListener('submit', function () {
+                window.onbeforeunload = null;
+            });
+        </script>
+    </th:block>
 </body>
+
 </html>

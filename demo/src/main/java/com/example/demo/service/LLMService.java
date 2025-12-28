@@ -446,23 +446,36 @@ public class LLMService {
         LLMModels.QuestionData question = new LLMModels.QuestionData();
         String[] sentences = paragraph.split("\\. ");
         String mainSentence = sentences.length > 0 ? sentences[0] : paragraph;
+        if (mainSentence.length() > 200)
+            mainSentence = mainSentence.substring(0, 197) + "...";
 
-        question.setQuestionText("Question " + (index + 1) + ": What is the key concept in this section?");
-        question.setSourceContext(mainSentence.length() > 100 ? mainSentence.substring(0, 100) + "..." : mainSentence);
+        question.setQuestionText(
+                "Question " + (index + 1) + ": Which of the following concepts is discussed in this section?");
+        question.setSourceContext(mainSentence);
         question.setCorrectOptionIndex(0);
-        question.setExplanation("This reflects the course content.");
+        question.setExplanation("This concept is a core part of the provided material.");
 
         List<LLMModels.OptionData> options = new ArrayList<>();
 
+        // Correct Option
         LLMModels.OptionData opt1 = new LLMModels.OptionData();
-        opt1.setText("Correct: " + (mainSentence.length() > 50 ? mainSentence.substring(0, 50) + "..." : mainSentence));
-        opt1.setExplanation("Correct answer from the course.");
+        opt1.setText(mainSentence);
+        opt1.setExplanation("Correct. This is explicitly stated in the text.");
         options.add(opt1);
 
-        for (int i = 1; i <= 3; i++) {
+        // Distractors
+        String[] genericDistractors = {
+                "The inverse of this concept is generally considered true in advanced applications.",
+                "This principle is outdated and no longer applies to modern contexts.",
+                "The text argues against this specific viewpoint.",
+                "This is a theoretical concept with no practical application.",
+                "The provided text does not mention this concept at all."
+        };
+
+        for (int i = 0; i < 3; i++) {
             LLMModels.OptionData opt = new LLMModels.OptionData();
-            opt.setText("Distractor option " + i);
-            opt.setExplanation("Incorrect - not from course content.");
+            opt.setText(genericDistractors[i % genericDistractors.length]);
+            opt.setExplanation("Incorrect. This is not supported by the text.");
             options.add(opt);
         }
 
@@ -547,8 +560,12 @@ public class LLMService {
     public String chatWithCourse(String message, String courseContext) {
         logDebug("chatWithCourse called. Key: " + (geminiApiKey != null ? "PRESENT" : "NULL"));
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
-            return "I'm in mock mode. I can't really answer that, but here's a generic response about " +
-                    (courseContext.length() > 20 ? courseContext.substring(0, 20) + "..." : "the course") + ".";
+            // Smart Mock Response
+            String snippet = courseContext.length() > 200 ? courseContext.substring(0, 200) + "..." : courseContext;
+            return "**(Demo Mode)** That is an excellent question! Based on the course material, here is a relevant excerpt that might help:\n\n> "
+                    +
+                    snippet +
+                    "\n\nThis topic is fundamental to the course. If you have more specific questions about this section, feel free to ask!";
         }
 
         try {
@@ -594,7 +611,7 @@ public class LLMService {
         logDebug("generateFlashcards called. Key: " + (geminiApiKey != null ? "PRESENT" : "NULL"));
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
             logDebug("Key is null/blank, using mock");
-            return generateMockFlashcards(count);
+            return generateMockFlashcards(courseContext, count);
         }
 
         try {
@@ -616,17 +633,18 @@ public class LLMService {
             Client client = getGeminiClient();
             if (client == null) {
                 logDebug("Client is null, using mock");
-                return generateMockFlashcards(count);
+                return generateMockFlashcards(courseContext, count);
             }
 
             logDebug("Calling Gemini API...");
             GenerateContentResponse response = client.models.generateContent(GEMINI_MODEL, prompt, null);
             logDebug("Gemini response received: " + (response != null));
-            return response != null ? parseFlashcards(response.text()) : generateMockFlashcards(count);
+            return response != null ? parseFlashcards(response.text(), courseContext)
+                    : generateMockFlashcards(courseContext, count);
         } catch (Exception e) {
             logDebug("Error generating flashcards: " + e.getMessage());
             logger.error("Error generating flashcards: {}", e.getMessage());
-            return generateMockFlashcards(count);
+            return generateMockFlashcards(courseContext, count);
         }
     }
 
@@ -659,7 +677,7 @@ public class LLMService {
         }
     }
 
-    private List<LLMModels.Flashcard> parseFlashcards(String responseText) {
+    private List<LLMModels.Flashcard> parseFlashcards(String responseText, String contextFallback) {
         try {
             String jsonContent = extractJson(responseText);
             if (jsonContent != null) {
@@ -678,17 +696,35 @@ public class LLMService {
         } catch (Exception e) {
             logger.warn("Could not parse flashcards: {}", e.getMessage());
         }
-        return generateMockFlashcards(5);
+        return generateMockFlashcards(contextFallback, 5);
     }
 
-    private List<LLMModels.Flashcard> generateMockFlashcards(int count) {
+    private List<LLMModels.Flashcard> generateMockFlashcards(String context, int count) {
         List<LLMModels.Flashcard> flashcards = new ArrayList<>();
-        for (int i = 1; i <= count; i++) {
+        String[] paragraphs = context.split("\\n\\n+");
+
+        for (int i = 0; i < count; i++) {
+            String paragraph = paragraphs[i % paragraphs.length].trim();
+            if (paragraph.isEmpty())
+                continue;
+
+            String[] sentences = paragraph.split("\\. ");
+            String firstSentence = sentences[0];
+
             LLMModels.Flashcard card = new LLMModels.Flashcard();
-            card.setFront("Mock Concept " + i);
-            card.setBack("This is a mock explanation for concept " + i);
+            card.setFront("Concept from Section " + (i + 1));
+            card.setBack(paragraph.length() > 150 ? paragraph.substring(0, 150) + "..." : paragraph);
             flashcards.add(card);
         }
+
+        // If we didn't generate enough, fill with generics
+        while (flashcards.size() < count) {
+            LLMModels.Flashcard card = new LLMModels.Flashcard();
+            card.setFront("Additional Concept " + (flashcards.size() + 1));
+            card.setBack("This is a key concept derived from the course material.");
+            flashcards.add(card);
+        }
+
         return flashcards;
     }
 
