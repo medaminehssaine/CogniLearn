@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle='Course Content', content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/student/courses}">My Courses</a></li>
+                    <li class="breadcrumb-item active" th:text="${course.title}">Course</li>
+                </ol>
+            </nav>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- Course Content -->
+                <div class="card glass-card mb-4 border-0">
+                    <div
+                        class="card-header bg-transparent border-bottom border-light d-flex justify-content-between align-items-center p-4">
+                        <div>
+                            <h4 class="mb-1 text-white fw-bold" th:text="${course.title}">Course Title</h4>
+                            <div class="d-flex align-items-center gap-3">
+                                <small th:if="${course.module}" class="text-muted">
+                                    <i class="bi bi-folder2-open me-1"></i>
+                                    <span th:text="${course.module.name}">Module Name</span>
+                                </small>
+                                <small class="text-muted">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <span th:text="${course.createdBy.fullName}">Teacher Name</span>
+                                </small>
+                            </div>
+                        </div>
+                        <div>
+                            <span th:if="${enrollment.courseCompleted}" class="badge bg-success rounded-pill px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i>Learned
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <p th:if="${course.description}" th:text="${course.description}"
+                            class="lead text-light opacity-75 mb-4"></p>
+
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-2">
+                                <i class="bi bi-journal-text text-primary"></i>
+                            </div>
+                            <h5 class="mb-0 text-white">Course Material</h5>
+                        </div>
+
+                        <!-- PDF Content -->
+                        <div th:if="${course.hasPdf()}"
+                            class="pdf-viewer-container rounded overflow-hidden border border-light border-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center p-2 bg-dark bg-opacity-50">
+                                <span class="text-muted small">
+                                    <i class="bi bi-file-pdf text-danger me-1"></i>
+                                    <span th:text="${course.pdfOriginalName}">document.pdf</span>
+                                </span>
+                                <a th:href="@{/student/courses/{id}/pdf(id=${course.id})}" target="_blank"
+                                    class="btn btn-sm btn-outline-light rounded-pill">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Open in new tab
+                                </a>
+                            </div>
+                            <iframe th:src="@{/student/courses/{id}/pdf(id=${course.id})}"
+                                style="width: 100%; height: 600px; border: none;">
+                            </iframe>
+                        </div>
+
+                        <!-- Text Content -->
+                        <div th:if="${!course.hasPdf()}"
+                            class="bg-dark bg-opacity-25 p-4 rounded border border-light border-opacity-10"
+                            style="max-height: 600px; overflow-y: auto;">
+                            <div style="white-space: pre-wrap; font-size: 1.05rem; line-height: 1.8; color: #e2e8f0;"
+                                th:text="${course.content}">Course content...</div>
+                        </div>
+
+                        <!-- Mark as Learned Button -->
+                        <div th:unless="${enrollment.courseCompleted}" class="mt-4 p-4 glass-panel rounded text-center">
+                            <h5 class="text-white mb-2">Finished reading?</h5>
+                            <p class="text-muted mb-3">Mark this course as learned to unlock quiz generation.</p>
+                            <form th:action="@{/student/courses/{id}/complete(id=${course.id})}" method="post">
+                                <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 hover-scale">
+                                    <i class="bi bi-check2-all me-2"></i>Mark as Learned
+                                </button>
+                            </form>
+                        </div>
+
+                        <div th:if="${enrollment.courseCompleted}"
+                            class="mt-4 p-4 bg-success bg-opacity-10 rounded border border-success border-opacity-25">
+                            <div class="d-flex align-items-center text-success">
+                                <i class="bi bi-check-circle-fill me-3 fs-3"></i>
+                                <div>
+                                    <strong class="fs-5">Course Completed!</strong>
+                                    <br>
+                                    <small class="opacity-75">Completed on <span
+                                            th:text="${#temporals.format(enrollment.courseCompletedAt, 'MMM dd, yyyy HH:mm')}"></span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Previous Quizzes -->
+                <div class="card glass-card border-0" th:if="${!#lists.isEmpty(quizzes)}">
+                    <div class="card-header bg-transparent border-bottom border-light p-3">
+                        <h5 class="mb-0 text-white"><i class="bi bi-clock-history me-2 text-warning"></i>Your Quiz
+                            History</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-dark bg-transparent mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Date</th>
+                                        <th>Difficulty</th>
+                                        <th>Score</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="quiz : ${quizzes}">
+                                        <td class="ps-4 text-muted"
+                                            th:text="${#temporals.format(quiz.createdAt, 'MMM dd, HH:mm')}">Date</td>
+                                        <td>
+                                            <span th:text="${quiz.difficulty.name()}"
+                                                th:class="${quiz.difficulty.name() == 'EASY' ? 'badge bg-success bg-opacity-25 text-success rounded-pill' : 
+                                                             (quiz.difficulty.name() == 'MEDIUM' ? 'badge bg-warning bg-opacity-25 text-warning rounded-pill' : 
+                                                             (quiz.difficulty.name() == 'HARD' ? 'badge bg-danger bg-opacity-25 text-danger rounded-pill' : 'badge bg-secondary rounded-pill'))}">
+                                                Medium
+                                            </span>
+                                        </td>
+                                        <td th:if="${quiz.result != null}" class="fw-bold"
+                                            th:text="${#numbers.formatDecimal(quiz.result.scorePercentage, 1, 0)} + '%'">
+                                            0%</td>
+                                        <td th:if="${quiz.result == null}">-</td>
+                                        <td>
+                                            <span th:if="${quiz.result != null && quiz.result.passed}"
+                                                class="badge bg-success rounded-pill">Passed</span>
+                                            <span th:if="${quiz.result != null && !quiz.result.passed}"
+                                                class="badge bg-danger rounded-pill">Failed</span>
+                                            <span th:if="${quiz.result == null}"
+                                                class="badge bg-secondary rounded-pill">Pending</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a th:if="${quiz.result != null}"
+                                                th:href="@{/student/quizzes/{id}/result(id=${quiz.id})}"
+                                                class="btn btn-sm btn-outline-primary rounded-pill">View Result</a>
+                                            <a th:if="${quiz.result == null}"
+                                                th:href="@{/student/quizzes/{id}(id=${quiz.id})}"
+                                                class="btn btn-sm btn-primary rounded-pill">Continue</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- AI Study Companion -->
+                <div class="card glass-card mb-4 border-0" th:if="${canTakeQuiz}">
+                    <div class="card-header bg-gradient-info text-white border-0">
+                        <h5 class="mb-0"><i class="bi bi-stars me-2"></i>AI Study Companion</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="small text-light opacity-75 mb-3">Enhance your learning with AI-powered tools.</p>
+
+                        <div class="d-grid gap-2">
+                            <a th:href="@{/student/courses/{id}/flashcards(id=${course.id})}"
+                                class="btn btn-outline-info rounded-pill hover-lift">
+                                <i class="bi bi-card-text me-2"></i>Generate Flashcards
+                            </a>
+                            <!-- Future: Summary Button -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Quiz -->
+                <div class="card glass-card mb-4 border-0" th:if="${canTakeQuiz}">
+                    <div class="card-header bg-gradient-primary text-white border-0">
+                        <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>AI Quiz Generator</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="small text-light opacity-75 mb-3">Generate a personalized quiz based on the course
+                            content using AI.</p>
+
+                        <form th:action="@{/student/courses/{id}/quiz/generate(id=${course.id})}" method="post">
+                            <div class="mb-3">
+                                <label for="numberOfQuestions" class="form-label text-muted small">Number of
+                                    Questions</label>
+                                <select name="numberOfQuestions" id="numberOfQuestions"
+                                    class="form-select bg-dark text-white border-secondary">
+                                    <option value="3">3 Questions</option>
+                                    <option value="5" selected>5 Questions</option>
+                                    <option value="10">10 Questions</option>
+                                    <option value="15">15 Questions</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="difficulty" class="form-label text-muted small">Difficulty Level</label>
+                                <select name="difficulty" id="difficulty"
+                                    class="form-select bg-dark text-white border-secondary">
+                                    <option value="">Auto (Based on your performance)</option>
+                                    <option th:each="level : ${difficulties}" th:value="${level}" th:text="${level}">
+                                        Level</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill hover-lift">
+                                <i class="bi bi-play-fill me-2"></i>Generate Quiz
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Quiz not available - Course not indexed -->
+                <div class="card glass-card mb-4 border-0" th:if="${!course.indexed}">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-hourglass-split text-warning fs-1 mb-3 d-block"></i>
+                        <p class="mb-0 text-muted">Quiz generation is not yet available for this course. Please check
+                            back later.</p>
+                    </div>
+                </div>
+
+                <!-- Quiz not available - Course not completed -->
+                <div class="card glass-card mb-4 border-0" th:if="${course.indexed && !enrollment.courseCompleted}">
+                    <div class="card-header bg-warning bg-opacity-10 border-0">
+                        <h5 class="mb-0 text-warning"><i class="bi bi-lock me-2"></i>Quiz Locked</h5>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-book text-warning fs-1"></i>
+                        </div>
+                        <p class="mb-2 text-white">Complete reading the course material first.</p>
+                        <small class="text-muted">Click "Mark as Learned" after you finish reading to unlock quiz
+                            generation.</small>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="card glass-card mb-4 border-0">
+                    <div class="card-header bg-transparent border-bottom border-light p-3">
+                        <h5 class="mb-0 text-white"><i class="bi bi-graph-up me-2 text-success"></i>Your Progress</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <div class="display-4 fw-bold text-primary"
+                                th:text="${enrollment.progressPercentage} + '%'">0%</div>
+                            <p class="text-muted">Course Progress</p>
+                        </div>
+                        <div class="progress bg-dark bg-opacity-50 mb-3" style="height: 10px; border-radius: 5px;">
+                            <div class="progress-bar bg-gradient-primary"
+                                th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Started: <span
+                                    th:text="${#temporals.format(enrollment.enrolledAt, 'MMM dd')}"></span></span>
+                            <span th:if="${enrollment.completedAt}">Completed: <span
+                                    th:text="${#temporals.format(enrollment.completedAt, 'MMM dd')}"></span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations -->
+                <div class="card glass-card border-0" th:if="${!#lists.isEmpty(recommendations)}">
+                    <div class="card-header bg-info bg-opacity-10 border-0">
+                        <h5 class="mb-0 text-info"><i class="bi bi-lightbulb me-2"></i>AI Recommendations</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="list-unstyled mb-0">
+                            <li th:each="rec : ${recommendations}" class="mb-3 d-flex">
+                                <i class="bi bi-arrow-right text-info me-2 mt-1"></i>
+                                <span class="text-light opacity-75" th:text="${rec}">Recommendation</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
